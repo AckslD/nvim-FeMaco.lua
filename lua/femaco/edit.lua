@@ -3,7 +3,7 @@ local ts_utils = require('nvim-treesitter.ts_utils')
 local parsers = require('nvim-treesitter.parsers')
 
 local clip_val = require('femaco.utils').clip_val
-local config = require('femaco.config')
+local settings = require('femaco.config').settings
 
 local M = {}
 
@@ -114,10 +114,10 @@ M.edit_code_block = function()
   end
   local cursor_row, cursor_col = unpack(vim.api.nvim_win_get_cursor(0))
   local extmarks = make_extmarks(code_block.start_row, code_block.end_row)
-  open_float(config.float_opts(code_block))
+  open_float(settings.float_opts(code_block))
 
   vim.cmd('file ' .. os.tmpname())
-  vim.bo.filetype = config.ft_from_lang(code_block.lang)
+  vim.bo.filetype = settings.ft_from_lang(code_block.lang)
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, code_block.lines)
   -- use nvim_exec to do this silently
   vim.api.nvim_exec('write!', true)
@@ -125,7 +125,7 @@ M.edit_code_block = function()
     clip_val(1, cursor_row - code_block.start_row - 1, vim.api.nvim_buf_line_count(0)),
     cursor_col,
   })
-  config.post_open_float()
+  settings.post_open_float()
 
   local float_bufnr = vim.fn.bufnr()
   vim.api.nvim_create_autocmd({'BufWritePost', 'WinClosed'}, {

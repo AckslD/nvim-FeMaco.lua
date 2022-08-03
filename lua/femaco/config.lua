@@ -1,6 +1,8 @@
 local clip_val = require('femaco.utils').clip_val
 
-return {
+local M = {}
+
+M.settings = {
   -- should return options passed to nvim_open_win
   -- @param code_block: data about the code-block with the keys
   --   * start_row
@@ -30,3 +32,5 @@ return {
     vim.wo.signcolumn = 'no'
   end
 }
+
+return M
