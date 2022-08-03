@@ -1,11 +1,16 @@
 # FeMaco
 Catalyze your **Fe**nced **Ma**rkdown **Co**de-block editing!
 
+![FeMoco_cluster](https://user-images.githubusercontent.com/23341710/182566777-492c5e81-95fc-4443-ae6a-23ba2519960e.png)
+(based on [this](https://en.wikipedia.org/wiki/FeMoco#/media/File:FeMoco_cluster.svg))
+
 A small plugin allowing to edit markdown code-blocks with correct filetype in a floating window.
 This allows you to use all of your config for your favorite language.
 The buffer will be also linked to a temporary file in order to allow LSPs to work properly.
 
 Powered by treesitter, lua and coffee.
+
+https://user-images.githubusercontent.com/23341710/182567238-e1f7bbcc-1f0c-43de-b17d-9d5576aba873.mp4
 
 ## Installation
 For example using [`packer`](https://github.com/wbthomason/packer.nvim):
