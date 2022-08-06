@@ -149,7 +149,9 @@ M.edit_code_block = function()
     buffer = 0,
     callback = function()
       vim.schedule(function()
-        vim.cmd(string.format('bdelete! %d', float_bufnr))
+        if vim.api.nvim_buf_is_loaded(float_bufnr) then
+          vim.cmd(string.format('bdelete! %d', float_bufnr))
+        end
       end)
     end,
   })
