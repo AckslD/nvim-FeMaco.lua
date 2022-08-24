@@ -62,8 +62,8 @@ local get_code_block_at_cursor = function()
 end
 
 local open_float = function(opts)
-  local buf  = vim.api.nvim_create_buf(false, false)
-  return vim.api.nvim_open_win(buf, 0, opts)
+  local buf = vim.api.nvim_create_buf(false, false)
+  return vim.api.nvim_open_win(buf, true, opts)
 end
 
 local get_ns_id = function()
@@ -114,7 +114,7 @@ M.edit_code_block = function()
   end
   local cursor_row, cursor_col = unpack(vim.api.nvim_win_get_cursor(0))
   local extmarks = make_extmarks(code_block.start_row, code_block.end_row)
-  open_float(settings.float_opts(code_block))
+  local winnr = open_float(settings.float_opts(code_block))
 
   vim.cmd('file ' .. os.tmpname())
   vim.bo.filetype = settings.ft_from_lang(code_block.lang)
@@ -125,7 +125,7 @@ M.edit_code_block = function()
     clip_val(1, cursor_row - code_block.start_row - 1, vim.api.nvim_buf_line_count(0)),
     cursor_col,
   })
-  settings.post_open_float()
+  settings.post_open_float(winnr)
 
   local float_bufnr = vim.fn.bufnr()
   vim.api.nvim_create_autocmd({'BufWritePost', 'WinClosed'}, {

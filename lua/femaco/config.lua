@@ -28,7 +28,7 @@ M.settings = {
     return lang
   end,
   -- what to do after opening the float
-  post_open_float = function()
+  post_open_float = function(winnr)
     vim.wo.signcolumn = 'no'
   end
 }
