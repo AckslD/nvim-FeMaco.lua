@@ -7,58 +7,39 @@ local settings = require('femaco.config').settings
 
 local M = {}
 
-local is_code_block = function(node)
-  return node:type() == 'fenced_code_block'
-end
-
-local get_code_block_node_at_cursor = function()
-  parsers.get_parser(0):parse()
-  local node = ts_utils.get_node_at_cursor(0, true)
-  while not is_code_block(node) do
-    node = node:parent()
-    if node == nil then
-      return nil
-    end
-  end
-  return node
-end
-
-local get_lang = function(fenced_code_block)
-  local info_string = fenced_code_block:named_child(1)
-  if info_string:type() ~= 'info_string' then
+local get_langtree_at_cursor = function()
+  local tree = parsers.get_parser(0)
+  if tree == nil then
     return nil
   end
-  local lang = info_string:named_child(0)
-  if lang:type() ~= 'language' then
-    return nil
-  end
-  return ts.get_node_text(lang, 0)
-end
-
-local get_content = function(fenced_code_block)
-  local content = fenced_code_block:named_child(3)
-  if content == nil then
-    return ''
-  end
-  if content:type() ~= 'code_fence_content' then
-    return ''
-  end
-  return ts.get_node_text(content, 0)
+  local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
+  return tree:language_for_range({row, 0, row, 0})
 end
 
 local get_code_block_at_cursor = function()
-  local fenced_code_block = get_code_block_node_at_cursor()
-  if fenced_code_block == nil then
+  local langtree = get_langtree_at_cursor()
+  if langtree == nil then
     return nil
   end
-
-  local start_row, _, end_row, _ = ts_utils.get_node_range(fenced_code_block)
-  return {
-    start_row = start_row,
-    end_row = end_row,
-    lines = vim.split(get_content(fenced_code_block), '\n'),
-    lang = get_lang(fenced_code_block),
-  }
+  local rows = {}
+  for _, region in ipairs(langtree:included_regions()) do
+    for _, region_part in ipairs(region) do
+      table.insert(rows, region_part[1])
+      table.insert(rows, region_part[4])
+    end
+  end
+  if #rows == 0 then
+    return nil
+  else
+    local start_row = rows[1] - 1
+    local end_row = rows[#rows] + 1
+    return {
+      start_row = start_row,
+      end_row = end_row,
+      lines = vim.api.nvim_buf_get_lines(0, start_row + 1, end_row - 1, true),
+      lang = langtree:lang()
+    }
+  end
 end
 
 local open_float = function(opts)
@@ -67,7 +48,7 @@ local open_float = function(opts)
 end
 
 local get_ns_id = function()
-  return vim.api.nvim_create_namespace('axel_markdown')
+  return vim.api.nvim_create_namespace('femaco')
 end
 
 local clear_extmarks = function()
