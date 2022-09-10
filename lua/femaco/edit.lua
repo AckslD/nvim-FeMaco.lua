@@ -1,44 +1,25 @@
 local ts = vim.treesitter
-local ts_utils = require('nvim-treesitter.ts_utils')
-local parsers = require('nvim-treesitter.parsers')
+local query = require('nvim-treesitter.query')
 
 local clip_val = require('femaco.utils').clip_val
 local settings = require('femaco.config').settings
 
 local M = {}
 
-local get_langtree_at_cursor = function()
-  local tree = parsers.get_parser(0)
-  if tree == nil then
-    return nil
-  end
-  local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
-  return tree:language_for_range({row, 0, row, 0})
-end
-
 local get_code_block_at_cursor = function()
-  local langtree = get_langtree_at_cursor()
-  if langtree == nil then
-    return nil
-  end
-  local rows = {}
-  for _, region in ipairs(langtree:included_regions()) do
-    for _, region_part in ipairs(region) do
-      table.insert(rows, region_part[1])
-      table.insert(rows, region_part[4])
+  local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
+  local matches = query.get_matches(0, 'injections')
+  for _, match in ipairs(matches) do
+    local content = match.content.node
+    local start_row, _, end_row, _ = ts.get_node_range(content)
+    if start_row - 1 <= row - 1 and row - 1 <= end_row then
+      return {
+        start_row = start_row - 1,
+        end_row = end_row + 1,
+        lines = vim.split(ts.get_node_text(content, 0), '\n'),
+        lang = ts.get_node_text(match.language.node, 0)
+      }
     end
-  end
-  if #rows == 0 then
-    return nil
-  else
-    local start_row = rows[1] - 1
-    local end_row = rows[#rows] + 1
-    return {
-      start_row = start_row,
-      end_row = end_row,
-      lines = vim.api.nvim_buf_get_lines(0, start_row + 1, end_row - 1, true),
-      lang = langtree:lang()
-    }
   end
 end
 
