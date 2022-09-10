@@ -6,18 +6,29 @@ local settings = require('femaco.config').settings
 
 local M = {}
 
+
+local parse_match = function(match)
+    if match.language == nil then
+      for lang, val in pairs(match) do
+        return lang, val.node
+      end
+    else
+      return ts.get_node_text(match.language.node, 0), match.content.node
+    end
+end
+
 local get_code_block_at_cursor = function()
   local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
   local matches = query.get_matches(0, 'injections')
   for _, match in ipairs(matches) do
-    local content = match.content.node
-    local start_row, _, end_row, _ = ts.get_node_range(content)
+    local lang, node = parse_match(match)
+    local start_row, _, end_row, _ = ts.get_node_range(node)
     if start_row - 1 <= row - 1 and row - 1 <= end_row then
       return {
         start_row = start_row - 1,
         end_row = end_row + 1,
-        lines = vim.split(ts.get_node_text(content, 0), '\n'),
-        lang = ts.get_node_text(match.language.node, 0)
+        lines = vim.split(ts.get_node_text(node, 0), '\n'),
+        lang = lang,
       }
     end
   end
