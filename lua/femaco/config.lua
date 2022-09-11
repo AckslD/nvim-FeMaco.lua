@@ -3,6 +3,14 @@ local clip_val = require('femaco.utils').clip_val
 local M = {}
 
 M.settings = {
+  -- should prepare a new buffer and return the winid
+  -- by default opens a floating window
+  -- provide a different callback to change this behaviour
+  -- @param opts: the return value from float_opts
+  prepare_buffer = function(opts)
+    local buf = vim.api.nvim_create_buf(false, false)
+    return vim.api.nvim_open_win(buf, true, opts)
+  end,
   -- should return options passed to nvim_open_win
   -- @param code_block: data about the code-block with the keys
   --   * start_row
