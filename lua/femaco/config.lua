@@ -5,8 +5,6 @@ local M = {}
 M.settings = {
   -- should return options passed to nvim_open_win
   -- @param code_block: data about the code-block with the keys
-  --   * start_row
-  --   * end_row
   --   * lines
   --   * lang
   float_opts = function(code_block)
