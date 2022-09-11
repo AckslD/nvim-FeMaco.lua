@@ -114,7 +114,7 @@ M.edit_code_block = function()
   end
   local cursor_row, cursor_col = unpack(vim.api.nvim_win_get_cursor(0))
   local extmarks = make_extmarks(code_block.start_row, code_block.end_row)
-  local winnr = open_float(settings.float_opts(code_block))
+  local winnr = settings.prepare_buffer(settings.float_opts(code_block))
 
   vim.cmd('file ' .. os.tmpname())
   vim.bo.filetype = settings.ft_from_lang(code_block.lang)
