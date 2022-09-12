@@ -34,8 +34,9 @@ jobs:
           git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter rtps/nvim-treesitter
       - name: Install parsers
         run: |
-          nvim --headless -c "TSInstallSync all" -c "q"
+          export PATH="${PWD}/build/:${PATH}"
+          nvim --headless -u tests/init.lua -c "TSInstallSync all" -c "q"
       - name: Run tests
         run: |
-            export PATH="${PWD}/build/:${PATH}"
-            make test
+          export PATH="${PWD}/build/:${PATH}"
+          make test
