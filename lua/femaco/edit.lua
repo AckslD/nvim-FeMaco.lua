@@ -96,11 +96,6 @@ local get_match_at_cursor = function()
   end
 end
 
-local open_float = function(opts)
-  local buf = vim.api.nvim_create_buf(false, false)
-  return vim.api.nvim_open_win(buf, true, opts)
-end
-
 local get_float_cursor = function(range, lines)
   local cursor_row, cursor_col = unpack(vim.api.nvim_win_get_cursor(0))
 
@@ -149,7 +144,11 @@ M.edit_code_block = function()
   -- NOTE that we do this before opening the float
   local float_cursor = get_float_cursor(match_data.range, match_lines)
   local range = match_data.range
-  local winnr = settings.prepare_buffer(settings.float_opts({lines = match_lines, lang = match_data.lang}))
+  local winnr = settings.prepare_buffer(settings.float_opts({
+    range = range,
+    lines = match_lines,
+    lang = match_data.lang,
+  }))
 
   vim.cmd('file ' .. os.tmpname())
   vim.bo.filetype = settings.ft_from_lang(match_data.lang)
