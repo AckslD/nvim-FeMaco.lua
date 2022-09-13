@@ -13,6 +13,7 @@ M.settings = {
   end,
   -- should return options passed to nvim_open_win
   -- @param code_block: data about the code-block with the keys
+  --   * range
   --   * lines
   --   * lang
   float_opts = function(code_block)
