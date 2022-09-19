@@ -1,4 +1,8 @@
 local ts = vim.treesitter
+local get_node_range = ts.get_node_range
+if ts.get_node_range == nil then
+  get_node_range = require('nvim-treesitter.ts_utils').get_node_range
+end
 local query = require('nvim-treesitter.query')
 
 local any = require('femaco.utils').any
@@ -30,7 +34,7 @@ local get_match_range = function(match)
   if match.metadata ~= nil and match.metadata.range ~= nil then
     return unpack(match.metadata.range)
   else
-    return ts.get_node_range(match.node)
+    return get_node_range(match.node)
   end
 end
 
