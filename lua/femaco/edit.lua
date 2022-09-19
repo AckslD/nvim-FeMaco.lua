@@ -154,8 +154,9 @@ M.edit_code_block = function()
     lang = match_data.lang,
   }))
 
-  vim.cmd('file ' .. os.tmpname())
-  vim.bo.filetype = settings.ft_from_lang(match_data.lang)
+  local filetype = settings.ft_from_lang(match_data.lang)
+  vim.cmd('file ' .. settings.create_tmp_filepath(filetype))
+  vim.bo.filetype = filetype
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, match_lines)
   -- use nvim_exec to do this silently
   vim.api.nvim_exec('write!', true)

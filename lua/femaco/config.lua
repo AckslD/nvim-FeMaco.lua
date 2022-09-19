@@ -37,7 +37,11 @@ M.settings = {
   -- what to do after opening the float
   post_open_float = function(winnr)
     vim.wo.signcolumn = 'no'
-  end
+  end,
+  -- create the path to a temporary file
+  create_tmp_filepath = function(filetype)
+    return os.tmpname()
+  end,
 }
 
 return M
