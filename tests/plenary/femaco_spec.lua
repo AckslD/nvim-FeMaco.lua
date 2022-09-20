@@ -167,6 +167,22 @@ print()
 ```
 ]])
   end)
+
+  it("create_tmp_filepath", function()
+    set_buf_text([[
+```python
+print()
+```
+]])
+    set_ft('markdown')
+    require('femaco').setup({create_tmp_filepath = function(filetype) return '/tmp/foobar_femaco_'..filetype end})
+    vim.cmd('FeMaco')
+    assert.are.equal(vim.fn.bufname(), '/tmp/foobar_femaco_python')
+    vim.cmd('q')
+    package.loaded['femaco'] = nil
+    package.loaded['femaco.edit'] = nil
+    package.loaded['femaco.config'] = nil
+  end)
 end)
 
 describe("inline languge injections", function()

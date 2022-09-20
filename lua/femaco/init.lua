@@ -3,7 +3,9 @@ local M = {}
 local update_config = function(opts)
   local config = require('femaco.config')
   opts = opts or {}
-  config.settings = vim.tbl_extend('force', config.settings, opts)
+  for key, value in pairs(opts) do
+    config.settings[key] = value
+  end
 end
 
 local create_commands = function()
