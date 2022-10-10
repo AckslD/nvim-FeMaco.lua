@@ -64,6 +64,18 @@ require('femaco').setup({
   post_open_float = function(winnr)
     vim.wo.signcolumn = 'no'
   end
+  -- create the path to a temporary file
+  create_tmp_filepath = function(filetype)
+    return os.tmpname()
+  end,
+  -- if a newline should always be used, useful for multiline injections
+  -- which separators needs to be on separate lines such as markdown, neorg etc
+  -- @param base_filetype: The filetype which FeMaco is called from, not the
+  -- filetype of the injected language (this is the current buffer so you can
+  -- get it from vim.bo.filetyp).
+  ensure_newline = function(base_filetype)
+    return false
+  end,
 })
 ```
 

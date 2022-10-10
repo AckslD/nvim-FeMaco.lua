@@ -44,6 +44,12 @@ local get_cursor = function()
 end
 
 describe("markdown code blocks", function()
+  after_each(function()
+    package.loaded['femaco'] = nil
+    package.loaded['femaco.edit'] = nil
+    package.loaded['femaco.config'] = nil
+  end)
+
   it("open code block, before first line", function()
     set_buf_text([[
 
@@ -179,9 +185,24 @@ print()
     vim.cmd('FeMaco')
     assert.are.equal(vim.fn.bufname(), '/tmp/foobar_femaco_python')
     vim.cmd('q')
-    package.loaded['femaco'] = nil
-    package.loaded['femaco.edit'] = nil
-    package.loaded['femaco.config'] = nil
+  end)
+
+  it("ensure_newline", function()
+    set_buf_text([[
+```python
+print()
+```
+]])
+    set_ft('markdown')
+    require('femaco').setup({ensure_newline = function(base_filetype) return base_filetype == 'markdown' end})
+    vim.cmd('FeMaco')
+    feedkeys('Gdd')
+    vim.cmd('wq')
+    assert.are.equal(get_buf_text(), [[
+```python
+print()
+```
+]])
   end)
 end)
 

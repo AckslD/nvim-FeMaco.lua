@@ -140,6 +140,7 @@ end
 
 M.edit_code_block = function()
   local bufnr = vim.fn.bufnr()
+  local base_filetype = vim.bo.filetype
   local match_data = get_match_at_cursor()
   if match_data == nil then
     return
@@ -168,12 +169,9 @@ M.edit_code_block = function()
     buffer = 0,
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
-      if #lines == 1 and lines[1] == '' then
-        -- keep empty blocks empty, note that this does not allow the user to set an empty single line,
-        -- but why would you want to do that anyway?
-        lines = {}
+      if lines[#lines] ~= '' and settings.ensure_newline(base_filetype) then
+        table.insert(lines, '')
       end
-      -- TODO extract function
       local sr, sc, er, ec = unpack(range)
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
       update_range(range, lines)
