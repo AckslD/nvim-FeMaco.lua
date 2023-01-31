@@ -75,7 +75,7 @@ local get_match_at_cursor = function()
     return range[3] == row - 1 and range[4] < col
   end
 
-  local matches = query.get_matches(0, 'injections')
+  local matches = query.get_matches(vim.api.nvim_get_current_buf(), 'injections')
   local before_cursor = {}
   local after_cursor = {}
   for _, match in ipairs(matches) do
