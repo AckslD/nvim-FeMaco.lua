@@ -19,8 +19,8 @@ M.settings = {
   float_opts = function(code_block)
     return {
       relative = 'cursor',
-      width = clip_val(5, 120, vim.api.nvim_win_get_width(0) - 10),  -- TODO how to offset sign column etc?
-      height = clip_val(5, #code_block.lines, vim.api.nvim_win_get_height(0) - 6),
+      width = clip_val(5, 120, clip_val(5, vim.api.nvim_win_get_width(0) - 10, 1000)),  -- TODO how to offset sign column etc?
+      height = clip_val(5, #code_block.lines, clip_val(5, vim.api.nvim_win_get_height(0) - 6, 1000)),
       anchor = 'NW',
       row = 0,
       col = 0,
