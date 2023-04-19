@@ -1,3 +1,5 @@
+local set_query = vim.treesitter.query.set_query or vim.treesitter.set_query
+
 local function escape_keys(keys)
   return vim.api.nvim_replace_termcodes(keys, true, false, true)
 end
@@ -213,7 +215,7 @@ describe("inline languge injections", function()
     set_buf_text([[
 print('local x = function() return 0 end', 'print()')
 ]])
-    ts.set_query('python', 'injections', '((string) @lua (#offset! @lua 0 1 0 -1))')
+    set_query('python', 'injections', '((string) @lua (#offset! @lua 0 1 0 -1))')
     set_ft('python')
     require('femaco').setup()
     set_cursor(1, 0)
