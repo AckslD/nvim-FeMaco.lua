@@ -44,7 +44,8 @@ local get_match_text = function(match, bufnr)
 end
 
 local parse_match = function(match)
-    if match.language == nil then
+    local language = match.language or match._lang
+    if language == nil then
       for lang, val in pairs(match) do
         return {
           lang = lang,
@@ -53,8 +54,8 @@ local parse_match = function(match)
       end
     else
       return {
-        lang = get_match_text(match.language, 0),
-        lang_match = match.language,
+        lang = get_match_text(language, 0),
+        lang_match = language,
         content_match = match.content,
       }
     end
