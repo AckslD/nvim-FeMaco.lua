@@ -35,7 +35,7 @@ jobs:
       - name: Install parsers
         run: |
           export PATH="${PWD}/build/:${PATH}"
-          nvim --headless -u tests/init.lua -c "TSInstallSync all" -c "q"
+          nvim --headless -u tests/init.lua -c "TSInstallSync markdown python" -c "q"
       - name: Run tests
         run: |
           export PATH="${PWD}/build/:${PATH}"
