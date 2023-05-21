@@ -170,6 +170,16 @@ M.edit_code_block = function()
     buffer = 0,
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
+
+      local lines_changed = false
+      for k, v in pairs(lines) do
+        if match_lines[k] ~= v then
+          lines_changed = true
+          break
+        end
+      end
+      if not lines_changed then return end
+
       if lines[#lines] ~= '' and settings.ensure_newline(base_filetype) then
         table.insert(lines, '')
       end
