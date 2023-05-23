@@ -139,6 +139,17 @@ local update_range = function(range, lines)
   end
 end
 
+local tbl_equal = function(left_tbl, right_tbl)
+  local equal = true
+  for k, v in pairs(right_tbl) do
+    if left_tbl[k] ~= v then
+      equal = false
+      break
+    end
+  end
+  return equal
+end
+
 M.edit_code_block = function()
   local bufnr = vim.fn.bufnr()
   local base_filetype = vim.bo.filetype
@@ -170,6 +181,9 @@ M.edit_code_block = function()
     buffer = 0,
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
+
+      if tbl_equal(match_lines, lines) then return end
+
       if lines[#lines] ~= '' and settings.ensure_newline(base_filetype) then
         table.insert(lines, '')
       end
