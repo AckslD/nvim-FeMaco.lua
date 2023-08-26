@@ -90,15 +90,19 @@ local get_match_at_cursor = function()
     local match_data = parse_match(match)
     local content_range = {get_match_range(match_data.content_match)}
     local ranges = {content_range}
+    local lang = match_data.lang
     if match_data.lang_match ~= nil then
       table.insert(ranges, {get_match_range(match_data.lang_match)})
+    elseif type(lang) ~= "string" then
+      table.insert(ranges, {get_match_range(lang)})
+      lang = get_match_text(lang, 0)
     end
     if any(contains_cursor, ranges) then
-      return {lang = match_data.lang, content = match_data.content_match, range = content_range}
+      return {lang = lang, content = match_data.content_match, range = content_range}
     elseif any(is_after_cursor, ranges) then
-      table.insert(after_cursor, {lang = match_data.lang, content = match_data.content_match, range = content_range})
+      table.insert(after_cursor, {lang = lang, content = match_data.content_match, range = content_range})
     elseif any(is_before_cursor, ranges) then
-      table.insert(before_cursor, {lang = match_data.lang, content = match_data.content_match, range = content_range})
+      table.insert(before_cursor, {lang = lang, content = match_data.content_match, range = content_range})
     end
   end
   if #after_cursor > 0 then
