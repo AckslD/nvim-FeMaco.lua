@@ -44,21 +44,28 @@ local get_match_text = function(match, bufnr)
 end
 
 local parse_match = function(match)
-    local language = match.language or match._lang
-    if language == nil then
-      for lang, val in pairs(match) do
-        return {
-          lang = lang,
-          content_match = val,
-        }
-      end
-    else
+  local language = match.language or match._lang
+  if language == nil then
+    local injection = match.injection
+    if injection ~= nil then
       return {
-        lang = get_match_text(language, 0),
-        lang_match = language,
-        content_match = match.content,
+        lang = injection.language,
+        content_match = injection.content,
       }
     end
+    for lang, val in pairs(match) do
+      return {
+        lang = lang,
+        content_match = val,
+      }
+    end
+  else
+    return {
+      lang = get_match_text(language, 0),
+      lang_match = language,
+      content_match = match.content or match.injection.content,
+    }
+  end
 end
 
 local get_match_at_cursor = function()
