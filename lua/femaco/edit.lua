@@ -44,21 +44,29 @@ local get_match_text = function(match, bufnr)
 end
 
 local parse_match = function(match)
-    local language = match.language or match._lang
-    if language == nil then
-      for lang, val in pairs(match) do
-        return {
-          lang = lang,
-          content_match = val,
-        }
-      end
-    else
-      return {
-        lang = get_match_text(language, 0),
-        lang_match = language,
-        content_match = match.content,
-      }
-    end
+  local injection = match.injection
+  local language = match.language or match._lang
+
+  if language then
+    return {
+      lang = get_match_text(language, 0),
+      lang_range = {get_match_range(language)},
+      content_match = match.content or injection.content,
+    }
+  end
+  if injection then
+    return {
+      lang = get_match_text(injection.language, 0),
+      lang_range = {get_match_range(injection.language)},
+      content_match = injection.content,
+    }
+  end
+  for lang, val in pairs(match) do
+    return {
+      lang = lang,
+      content_match = val,
+    }
+  end
 end
 
 local get_match_at_cursor = function()
@@ -83,8 +91,8 @@ local get_match_at_cursor = function()
     local match_data = parse_match(match)
     local content_range = {get_match_range(match_data.content_match)}
     local ranges = {content_range}
-    if match_data.lang_match ~= nil then
-      table.insert(ranges, {get_match_range(match_data.lang_match)})
+    if match_data.lang_range then
+      table.insert(ranges, match_data.lang_range)
     end
     if any(contains_cursor, ranges) then
       return {lang = match_data.lang, content = match_data.content_match, range = content_range}
