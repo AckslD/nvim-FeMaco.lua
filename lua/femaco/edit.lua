@@ -44,29 +44,30 @@ local get_match_text = function(match, bufnr)
 end
 
 local parse_match = function(match)
-  local injection = match.injection
-  local language = match.language or match._lang
+  local language = match.language or match._lang or (match.injection and match.injection.language)
+  if language == nil then
+    for lang, val in pairs(match) do
+      return {
+        lang = lang,
+        content = val,
+      }
+    end
+  end
+  local lang
+  local lang_range
+  if type(language) == 'string' then
+    lang = language
+  else
+    lang = get_match_text(language, 0)
+    lang_range = {get_match_range(language)}
+  end
+  local content = match.content or (match.injection and match.injection.content)
 
-  if language then
-    return {
-      lang = get_match_text(language, 0),
-      lang_range = {get_match_range(language)},
-      content_match = match.content or injection.content,
-    }
-  end
-  if injection then
-    return {
-      lang = get_match_text(injection.language, 0),
-      lang_range = {get_match_range(injection.language)},
-      content_match = injection.content,
-    }
-  end
-  for lang, val in pairs(match) do
-    return {
-      lang = lang,
-      content_match = val,
-    }
-  end
+  return {
+    lang = lang,
+    lang_range = lang_range,
+    content = content,
+  }
 end
 
 local get_match_at_cursor = function()
@@ -89,17 +90,17 @@ local get_match_at_cursor = function()
   local after_cursor = {}
   for _, match in ipairs(matches) do
     local match_data = parse_match(match)
-    local content_range = {get_match_range(match_data.content_match)}
+    local content_range = {get_match_range(match_data.content)}
     local ranges = {content_range}
     if match_data.lang_range then
       table.insert(ranges, match_data.lang_range)
     end
     if any(contains_cursor, ranges) then
-      return {lang = match_data.lang, content = match_data.content_match, range = content_range}
+      return {lang = match_data.lang, content = match_data.content, range = content_range}
     elseif any(is_after_cursor, ranges) then
-      table.insert(after_cursor, {lang = match_data.lang, content = match_data.content_match, range = content_range})
+      table.insert(after_cursor, {lang = match_data.lang, content = match_data.content, range = content_range})
     elseif any(is_before_cursor, ranges) then
-      table.insert(before_cursor, {lang = match_data.lang, content = match_data.content_match, range = content_range})
+      table.insert(before_cursor, {lang = match_data.lang, content = match_data.content, range = content_range})
     end
   end
   if #after_cursor > 0 then
