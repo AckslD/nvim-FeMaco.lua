@@ -177,7 +177,8 @@ M.edit_code_block = function()
   }))
 
   local filetype = settings.ft_from_lang(match_data.lang)
-  vim.cmd('file ' .. settings.create_tmp_filepath(filetype))
+  local tempfile = settings.create_tmp_filepath(filetype)
+  vim.cmd('file ' .. tempfile)
   vim.bo.filetype = filetype
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, match_lines)
   -- use nvim_exec to do this silently
@@ -190,7 +191,7 @@ M.edit_code_block = function()
     buffer = 0,
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
-
+      vim.loop.fs_unlink(tempfile)
       if tbl_equal(match_lines, lines) then return end
 
       if lines[#lines] ~= '' and settings.ensure_newline(base_filetype) then
