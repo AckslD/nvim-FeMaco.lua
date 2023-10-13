@@ -159,6 +159,73 @@ local tbl_equal = function(left_tbl, right_tbl)
   return equal
 end
 
+-- Calculate the indent size based on the smallest indent
+-- if a line with non-whitespace characters.
+local calc_indent_size = function(lines)
+  local smallest_indent_size = nil
+  for _, line in ipairs(lines) do
+    if line:match('^%s*$') == nil then
+      local indent_size_line = #line:match('^%s*')
+      if smallest_indent_size == nil or (indent_size_line < smallest_indent_size) then
+        smallest_indent_size = indent_size_line
+      end
+    end
+  end
+  if smallest_indent_size == nil then
+    return 0
+  end
+  return smallest_indent_size
+end
+
+local un_indent_lines = function(lines, indent_size)
+  local lines_out = {}
+  local indent_char = nil
+
+  for i, line in ipairs(lines) do
+    local leading_whitespace = line:match('^%s*')
+    if #leading_whitespace == #line then
+      -- Leave empty lines and lines with only whitespace as-is to avoid setting
+      -- whitespace where there shouldn't be any.
+      lines_out[i] = line
+    else
+      if indent_char == nil then
+        indent_char = leading_whitespace:sub(1, 1)
+      end
+
+      -- Check that all leading whitespace is the same. We have this strict requirement
+      -- since we don't know which whitespace to insert after the edit if there's mixed
+      -- ones to begin with.
+      for j = 1, #leading_whitespace do
+        if leading_whitespace:sub(j, j) ~= indent_char then
+          return lines, nil
+        end
+      end
+
+      if #leading_whitespace >= indent_size then
+        lines_out[i] = line:sub(indent_size + 1)
+      else
+        lines_out[i] = line
+      end
+    end
+  end
+
+  return lines_out, indent_char
+end
+
+local re_indent_lines = function(lines, indent_size, indent_char)
+  local lines_out = {}
+  local indent = string.rep(indent_char or ' ', indent_size)
+  for i, line in ipairs(lines) do
+    local is_whitespace_only = line:match("^%s*$") ~= nil
+    if is_whitespace_only then
+      lines_out[i] = line
+    else
+      lines_out[i] = indent .. line
+    end
+  end
+  return lines_out
+end
+
 M.edit_code_block = function()
   local bufnr = vim.fn.bufnr()
   local base_filetype = vim.bo.filetype
@@ -179,7 +246,12 @@ M.edit_code_block = function()
   local filetype = settings.ft_from_lang(match_data.lang)
   vim.cmd('file ' .. settings.create_tmp_filepath(filetype))
   vim.bo.filetype = filetype
-  vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, match_lines)
+  local indent_size = calc_indent_size(match_lines)
+  local lines_for_edit, indent_char = match_lines, nil
+  if indent_size > 0 then
+    lines_for_edit, indent_char = un_indent_lines(match_lines, indent_size)
+  end
+  vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, lines_for_edit)
   -- use nvim_exec to do this silently
   vim.api.nvim_exec('write!', true)
   vim.api.nvim_win_set_cursor(0, float_cursor)
@@ -191,12 +263,17 @@ M.edit_code_block = function()
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
 
-      if tbl_equal(match_lines, lines) then return end
+      if tbl_equal(lines_for_edit, lines) then
+        return -- unmodified
+      end
 
       if lines[#lines] ~= '' and settings.ensure_newline(base_filetype) then
         table.insert(lines, '')
       end
       local sr, sc, er, ec = unpack(range)
+      if indent_char and indent_size > 0 then
+        lines = re_indent_lines(lines, indent_size, indent_char)
+      end
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
       update_range(range, lines)
     end,
