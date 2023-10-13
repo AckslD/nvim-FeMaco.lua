@@ -149,6 +149,10 @@ local update_range = function(range, lines)
 end
 
 local tbl_equal = function(left_tbl, right_tbl)
+  if #left_tbl ~= #right_tbl then
+    return false
+  end
+
   local equal = true
   for k, v in pairs(right_tbl) do
     if left_tbl[k] ~= v then
