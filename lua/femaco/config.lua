@@ -53,7 +53,7 @@ M.settings = {
   -- Return true if the indentation should be normalized. Useful when the
   -- injected language inherits indentation from the construction scope (e.g. an
   -- inline multiline sql string). If true, the leading indentation is detected,
-  -- stripped, and restored before/after editing.
+  -- and removed during editing, and re-added when the buffer is written.
   --
   -- @param base_filetype: The filetype which FeMaco is called from, not the
   -- filetype of the injected language (this is the current buffer, so you can

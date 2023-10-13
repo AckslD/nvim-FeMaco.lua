@@ -163,76 +163,95 @@ local tbl_equal = function(left_tbl, right_tbl)
   return equal
 end
 
--- Calculate the indent size based on the smallest indent
--- if a line with non-whitespace characters.
-local get_ident_sizes = function(lines)
-  local first_indent_size, last_indent_size, smallest_indent_size = nil, nil, nil
+local get_indent_size = function(line, indent_char)
+    return #line:match("^[" .. indent_char .. "]*")
+end
+
+-- calculate indent sizes for first, last, and intermediate lines
+local calc_indent_for_lines = function(lines)
+  local first_indent_size = nil
+  local last_indent_size = nil
+  local smallest_indent_size = nil
+  local indent_char = nil
+
   for i, line in ipairs(lines) do
-    local indent_size_line = #line:match("^%s*")
-    local is_whitespace_only_line = line:match("^%s*$") ~= nil
-    if is_whitespace_only_line and i == 1 then
-      first_indent_size = indent_size_line
-    elseif is_whitespace_only_line and i == #lines then
-      last_indent_size = indent_size_line
-    elseif not is_whitespace_only_line then
-      if smallest_indent_size == nil or (indent_size_line < smallest_indent_size) then
-        smallest_indent_size = indent_size_line
+    local is_empty = #line == 0
+
+    if indent_char == nil and not is_empty then
+      -- attempt to resolve the indentation character
+      if get_indent_size(line, " ") > 0 then
+        indent_char = " "
+      elseif get_indent_size(line, "\t") > 0 then
+        indent_char = "\t"
+      end
+    end
+
+    -- for convenience, we don't care about spaces vs tabs for first and last line whitespace detection
+    local blank_link_match = line:match("^[ \t]*$")
+    if i == 1 and blank_link_match ~= nil then
+      first_indent_size = #blank_link_match
+    elseif i == #lines and blank_link_match ~= nil then
+      last_indent_size = #blank_link_match
+    elseif not is_empty then
+      local line_indent_size
+      if indent_char == nil then
+        -- if we tried but failed to resolve an indent character for a non-empty line, then the line
+        -- is not indented. In that case the smallest indent will be zero.
+        line_indent_size = 0
+        smallest_indent_size = 0
+      else
+        line_indent_size = get_indent_size(line, indent_char)
+        if smallest_indent_size == nil or line_indent_size < smallest_indent_size then
+          smallest_indent_size = line_indent_size
+        end
       end
     end
   end
-  local indent_size = 0
-  if smallest_indent_size ~= nil then
-    indent_size = smallest_indent_size
+
+  if indent_char == nil then
+    return {
+      first_indent_size = first_indent_size,
+      last_indent_size = last_indent_size,
+      indent_size = 0,
+      indent_char = " ", -- value irrelevant since size = 0
+    }
   end
   return {
     first_indent_size = first_indent_size,
     last_indent_size = last_indent_size,
-    indent_size = indent_size,
+    indent_size = smallest_indent_size,
+    indent_char = indent_char,
   }
 end
 
 -- Strips leading indent from lines, if present. First and last row is handled
 -- as special cases; they are removed entirely if the provided indent_sizes are
 -- a match for the respective line (rely on re_indent_lines to restore them).
-local un_indent_lines = function(lines, indent_sizes)
-  local indent_char = nil
-
-  local lines_out, lines_out_len = {}, 0
+local normalize_line_indentation = function(lines, indent)
+  local normalized_lines = {}
+  local lines_out_len = 0
   local function push_line(line)
     lines_out_len = lines_out_len + 1
-    lines_out[lines_out_len] = line
+    normalized_lines[lines_out_len] = line
   end
 
   for i, line in ipairs(lines) do
-    local leading_whitespace = line:match("^%s*")
-    local leading_whitespace_size = #leading_whitespace
+    local leading_whitespace_size = get_indent_size(line, indent.indent_char)
 
-    if i == 1 and leading_whitespace_size == indent_sizes.first_indent_size then
+    if i == 1 and indent.first_indent_size ~= nil then
       -- strip line, rely on auto insert post-edit
-    elseif i == #lines and leading_whitespace_size == indent_sizes.last_indent_size then
+    elseif i == #lines and indent.last_indent_size ~= nil then
       -- strip line, rely on auto insert post-edit
     else
-      if indent_char == nil then
-        indent_char = leading_whitespace:sub(1, 1)
-      end
-
-      -- Check that all leading whitespace is the same. We have this strict requirement
-      -- since we don't know which whitespace to insert after the edit if there's mixed
-      -- ones to begin with.
-      for j = 1, #leading_whitespace do
-        if leading_whitespace:sub(j, j) ~= indent_char then
-          return lines, nil
-        end
-      end
-      if #leading_whitespace >= indent_sizes.indent_size then
-        push_line(line:sub(indent_sizes.indent_size + 1))
+      if leading_whitespace_size >= indent.indent_size then
+        push_line(line:sub(indent.indent_size + 1))
       else
         push_line(line)
       end
     end
   end
 
-  return lines_out, indent_char
+  return normalized_lines
 end
 
 -- Inserts leading indent to lines. First and last row is handled in a special
@@ -240,19 +259,22 @@ end
 -- respectively. It is assumed that they were previously stripped before the
 -- content was edited, so we don't need to treat the edited first and last row
 -- in any special way.
-local re_indent_lines = function(lines, indent_sizes, indent_char)
-  local lines_out, lines_out_len = {}, 0
+local denormalize_lines = function(normalized_lines, indent_info)
+  local denormalized_lines, denormalized_lines_count = {}, 0
   local function push_line(line)
-    lines_out_len = lines_out_len + 1
-    lines_out[lines_out_len] = line
+    denormalized_lines_count = denormalized_lines_count + 1
+    denormalized_lines[denormalized_lines_count] = line
+  end
+  local function indent_str(indent_size)
+    return string.rep(indent_info.indent_char, indent_size)
   end
 
-  local indent = string.rep(indent_char or " ", indent_sizes.indent_size)
+  local indent = string.rep(indent_info.indent_char, indent_info.indent_size)
   -- Restore original first whitespace only line
-  if indent_sizes.first_indent_size then
-    push_line(string.rep(indent_char or " ", indent_sizes.first_indent_size))
+  if indent_info.first_indent_size then
+    push_line(indent_str(indent_info.first_indent_size))
   end
-  for _, line in ipairs(lines) do
+  for _, line in ipairs(normalized_lines) do
     if #line == 0 then
       push_line(line) -- let empty lines remain empty
     else
@@ -260,10 +282,10 @@ local re_indent_lines = function(lines, indent_sizes, indent_char)
     end
   end
   -- Restore original trailing whitespace only line
-  if indent_sizes.last_indent_size then
-    push_line(string.rep(indent_char or " ", indent_sizes.last_indent_size))
+  if indent_info.last_indent_size then
+    push_line(indent_str(indent_info.last_indent_size))
   end
-  return lines_out
+  return denormalized_lines
 end
 
 M.edit_code_block = function()
@@ -275,11 +297,13 @@ M.edit_code_block = function()
   end
   local match_lines = vim.split(get_match_text(match_data.content, 0), "\n")
   local filetype = settings.ft_from_lang(match_data.lang)
-  local indent_sizes, lines_for_edit, indent_char = nil, match_lines, nil
+
+  local indent = nil
+  local lines_for_edit = match_lines
   local should_normalize_indent = settings.normalize_indent(base_filetype)
   if should_normalize_indent then
-    indent_sizes = get_ident_sizes(match_lines)
-    lines_for_edit, indent_char = un_indent_lines(match_lines, indent_sizes)
+    indent = calc_indent_for_lines(match_lines)
+    lines_for_edit = normalize_line_indentation(match_lines, indent)
   end
 
   -- NOTE that we do this before opening the float
@@ -314,8 +338,9 @@ M.edit_code_block = function()
         table.insert(lines, "")
       end
       local sr, sc, er, ec = unpack(range)
-      if should_normalize_indent and indent_char and indent_sizes then
-        lines = re_indent_lines(lines, indent_sizes, indent_char)
+
+      if should_normalize_indent and indent then
+        lines = denormalize_lines(lines, indent)
       end
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
       update_range(range, lines)
