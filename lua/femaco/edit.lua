@@ -246,11 +246,16 @@ M.edit_code_block = function()
   local filetype = settings.ft_from_lang(match_data.lang)
   vim.cmd('file ' .. settings.create_tmp_filepath(filetype))
   vim.bo.filetype = filetype
-  local indent_size = calc_indent_size(match_lines)
-  local lines_for_edit, indent_char = match_lines, nil
-  if indent_size > 0 then
-    lines_for_edit, indent_char = un_indent_lines(match_lines, indent_size)
+
+  local indent_size, lines_for_edit, indent_char = 0, match_lines, nil
+  local should_normalize_indent = settings.normalize_indent(base_filetype)
+  if should_normalize_indent then
+    indent_size = calc_indent_size(match_lines)
+    if indent_size > 0 then
+      lines_for_edit, indent_char = un_indent_lines(match_lines, indent_size)
+    end
   end
+
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, lines_for_edit)
   -- use nvim_exec to do this silently
   vim.api.nvim_exec('write!', true)
@@ -271,7 +276,7 @@ M.edit_code_block = function()
         table.insert(lines, '')
       end
       local sr, sc, er, ec = unpack(range)
-      if indent_char and indent_size > 0 then
+      if should_normalize_indent and indent_char and indent_size > 0 then
         lines = re_indent_lines(lines, indent_size, indent_char)
       end
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)

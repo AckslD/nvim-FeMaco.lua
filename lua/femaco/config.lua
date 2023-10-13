@@ -50,6 +50,17 @@ M.settings = {
   ensure_newline = function(base_filetype)
     return false
   end,
+  -- Return true if the indentation should be normalized. Useful when the
+  -- injected language inherits indentation from the construction scope (e.g. an
+  -- inline multiline sql string). If true, the leading indentation is detected,
+  -- stripped, and restored before/after editing.
+  --
+  -- @param base_filetype: The filetype which FeMaco is called from, not the
+  -- filetype of the injected language (this is the current buffer, so you can
+  -- get it from vim.bo.filetype).
+  normalize_indent = function (base_filetype)
+    return false
+  end
 }
 
 return M
