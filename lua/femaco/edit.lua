@@ -279,9 +279,7 @@ M.edit_code_block = function()
   local should_normalize_indent = settings.normalize_indent(base_filetype)
   if should_normalize_indent then
     indent_sizes = get_ident_sizes(match_lines)
-    if indent_sizes.indent_size > 0 then
-      lines_for_edit, indent_char = un_indent_lines(match_lines, indent_sizes)
-    end
+    lines_for_edit, indent_char = un_indent_lines(match_lines, indent_sizes)
   end
 
   -- NOTE that we do this before opening the float
@@ -316,7 +314,7 @@ M.edit_code_block = function()
         table.insert(lines, "")
       end
       local sr, sc, er, ec = unpack(range)
-      if should_normalize_indent and indent_char and indent_sizes and indent_sizes.indent_size > 0 then
+      if should_normalize_indent and indent_char and indent_sizes then
         lines = re_indent_lines(lines, indent_sizes, indent_char)
       end
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
