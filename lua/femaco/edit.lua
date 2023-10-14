@@ -177,7 +177,8 @@ M.edit_code_block = function()
   }))
 
   local filetype = settings.ft_from_lang(match_data.lang)
-  vim.cmd('file ' .. settings.create_tmp_filepath(filetype))
+  local tmp_filepath = settings.create_tmp_filepath(filetype)
+  vim.cmd('file ' .. tmp_filepath)
   vim.bo.filetype = filetype
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, match_lines)
   -- use nvim_exec to do this silently
@@ -188,10 +189,15 @@ M.edit_code_block = function()
   local float_bufnr = vim.fn.bufnr()
   vim.api.nvim_create_autocmd({'BufWritePost', 'WinClosed'}, {
     buffer = 0,
-    callback = function()
+    callback = function(event)
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
 
-      if tbl_equal(match_lines, lines) then return end
+      if tbl_equal(match_lines, lines) then
+        if event.event == 'WinClosed' then
+          settings.post_close_float(tmp_filepath)
+        end
+        return
+      end
 
       if lines[#lines] ~= '' and settings.ensure_newline(base_filetype) then
         table.insert(lines, '')
@@ -199,6 +205,9 @@ M.edit_code_block = function()
       local sr, sc, er, ec = unpack(range)
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
       update_range(range, lines)
+      if event.event == 'WinClosed' then
+        settings.post_close_float(tmp_filepath)
+      end
     end,
   })
   -- make sure the buffer is deleted when we close the window
