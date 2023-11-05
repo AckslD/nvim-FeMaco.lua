@@ -336,7 +336,7 @@ M.edit_code_block = function()
       end
 
       if tbl_equal(lines_for_edit, lines) then
-        return
+        return -- unmodified
       end
 
       if lines[#lines] ~= "" and settings.ensure_newline(base_filetype) then
