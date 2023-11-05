@@ -331,10 +331,11 @@ M.edit_code_block = function()
     callback = function(event)
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
 
+      if event.event == 'WinClosed' then
+        settings.post_close_float(tmp_filepath)
+      end
+
       if tbl_equal(lines_for_edit, lines) then
-        if event.event == 'WinClosed' then
-          settings.post_close_float(tmp_filepath)
-        end
         return
       end
 
@@ -348,9 +349,6 @@ M.edit_code_block = function()
       end
       vim.api.nvim_buf_set_text(bufnr, sr, sc, er, ec, lines)
       update_range(range, lines)
-      if event.event == 'WinClosed' then
-        settings.post_close_float(tmp_filepath)
-      end
     end,
   })
   -- make sure the buffer is deleted when we close the window
