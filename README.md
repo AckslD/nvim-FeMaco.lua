@@ -64,6 +64,10 @@ require('femaco').setup({
   post_open_float = function(winnr)
     vim.wo.signcolumn = 'no'
   end
+  -- what to do after closing the float
+  post_close_float = function(tmp_filepath)
+    vim.loop.fs_unlink(tmp_filepath)
+  end,
   -- create the path to a temporary file
   create_tmp_filepath = function(filetype)
     return os.tmpname()

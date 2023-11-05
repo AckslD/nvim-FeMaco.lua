@@ -296,7 +296,6 @@ M.edit_code_block = function()
     return
   end
   local match_lines = vim.split(get_match_text(match_data.content, 0), "\n")
-  local filetype = settings.ft_from_lang(match_data.lang)
 
   local indent = nil
   local lines_for_edit = match_lines
@@ -315,7 +314,9 @@ M.edit_code_block = function()
     lang = match_data.lang,
   }))
 
-  vim.cmd("file " .. settings.create_tmp_filepath(filetype))
+  local filetype = settings.ft_from_lang(match_data.lang)
+  local tmp_filepath = settings.create_tmp_filepath(filetype)
+  vim.cmd('file ' .. tmp_filepath)
   vim.bo.filetype = filetype
 
   vim.api.nvim_buf_set_lines(vim.fn.bufnr(), 0, -1, true, lines_for_edit)
@@ -327,8 +328,12 @@ M.edit_code_block = function()
   local float_bufnr = vim.fn.bufnr()
   vim.api.nvim_create_autocmd({ "BufWritePost", "WinClosed" }, {
     buffer = 0,
-    callback = function()
+    callback = function(event)
       local lines = vim.api.nvim_buf_get_lines(float_bufnr, 0, -1, true)
+
+      if event.event == 'WinClosed' then
+        settings.post_close_float(tmp_filepath)
+      end
 
       if tbl_equal(lines_for_edit, lines) then
         return -- unmodified
