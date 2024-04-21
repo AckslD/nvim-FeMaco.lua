@@ -1,4 +1,4 @@
-local set_query = vim.treesitter.query.set_query or vim.treesitter.set_query
+local set_query = vim.treesitter.query.set_query or vim.treesitter.set_query or vim.treesitter.query.set
 
 local function escape_keys(keys)
   return vim.api.nvim_replace_termcodes(keys, true, false, true)
