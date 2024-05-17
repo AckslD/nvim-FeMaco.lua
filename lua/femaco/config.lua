@@ -42,6 +42,10 @@ M.settings = {
   create_tmp_filepath = function(filetype)
     return os.tmpname()
   end,
+  -- what to do after closing the float
+  post_close_float = function(tmp_filepath)
+    vim.loop.fs_unlink(tmp_filepath)
+  end,
   -- if a newline should always be used, useful for multiline injections
   -- which separators needs to be on separate lines such as markdown, neorg etc
   -- @param base_filetype: The filetype which FeMaco is called from, not the
